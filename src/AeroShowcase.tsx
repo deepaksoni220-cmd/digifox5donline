@@ -414,7 +414,16 @@ export default function AeroShowcase() {
       const checkoutInteractive = p >= 0.62;
 
       if (heroRef.current) heroRef.current.style.pointerEvents = heroInteractive ? "auto" : "none";
-      if (checkoutRef.current) checkoutRef.current.style.pointerEvents = checkoutInteractive ? "auto" : "none";
+      // Keep checkout div itself at pointer-events:none so it never blocks the
+      // rotate layer or the canvas below it. The interactive children (buttons,
+      // size pills, etc.) already have pointer-events:auto via CSS and will
+      // still receive clicks because they sit on top in the stacking context.
+      if (checkoutRef.current) checkoutRef.current.style.pointerEvents = "none";
+      // Enable the checkout-rotate-layer when in the size-guide / checkout phase
+      // so the user can drag the 3D shoe while the size panel is visible.
+      if (checkoutDragZoneRef.current) {
+        checkoutDragZoneRef.current.style.pointerEvents = checkoutInteractive ? "auto" : "none";
+      }
 
       // grid UI layer — in over hero→grid, out as the white panel rises
       const gridIn = easeOut(seg(p, 0.24, 0.4));
@@ -797,7 +806,7 @@ export default function AeroShowcase() {
                   el.releasePointerCapture(e.pointerId);
                 } catch {}
               }}
-              style={{ pointerEvents: progress.current >= 0.62 ? "auto" : "none" }}
+              style={{ pointerEvents: "none" /* RAF apply() enables this when p ≥ 0.62 */ }}
             >
               <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--head" />
               <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--sizes" />
@@ -958,8 +967,12 @@ const css = `
   position:absolute;
   inset:0;
   z-index:11;
-  pointer-events:none;
+  pointer-events:none;   /* RAF apply() enables this to "auto" when p ≥ 0.62 */
   touch-action:none;
+  cursor:grab;
+}
+.ae-checkout-rotate-layer:active{
+  cursor:grabbing;
 }
 .ae-checkout-rotate-hole{
   position:absolute;

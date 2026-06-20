@@ -184,6 +184,10 @@ function MainShoe({
       d.lastY = e.clientY;
       interacted.current = true;
       el.style.cursor = "grabbing";
+      try {
+        el.setPointerCapture(e.pointerId);
+      } catch {}
+      e.preventDefault();
     };
     const move = (e: PointerEvent) => {
       if (!d.dragging) return;
@@ -193,20 +197,27 @@ function MainShoe({
       d.lastY = e.clientY;
       d.ry += dx * 0.01;
       d.rx = clamp(d.rx - dy * 0.01, -1.0, 1.0);
+      e.preventDefault();
     };
-    const up = () => {
+    const up = (e: PointerEvent) => {
       if (!d.dragging) return;
       d.dragging = false;
       el.style.cursor = progress.current >= DRAG_FROM ? "grab" : "";
+      try {
+        el.releasePointerCapture(e.pointerId);
+      } catch {}
     };
 
-    el.addEventListener("pointerdown", down);
-    window.addEventListener("pointermove", move);
+    el.style.touchAction = "none";
+    el.addEventListener("pointerdown", down, { passive: false });
+    el.addEventListener("pointermove", move, { passive: false });
     window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
     return () => {
-      el.removeEventListener("pointerdown", down);
-      window.removeEventListener("pointermove", move);
-      window.removeEventListener("pointerup", up);
+      el.removeEventListener("pointerdown", down as EventListener);
+      el.removeEventListener("pointermove", move as EventListener);
+      window.removeEventListener("pointerup", up as EventListener);
+      window.removeEventListener("pointercancel", up as EventListener);
     };
   }, [gl, progress, interacted]);
 
@@ -778,7 +789,7 @@ const css = `
   background:radial-gradient(closest-side, rgba(20,5,10,.85) 10%, rgba(60,20,30,.4) 45%, transparent 80%);
   transform:translate(-50%,-50%) scaleY(.32);pointer-events:none;
   will-change:left,top,width,opacity,transform;filter:blur(3px);}
-.ae-canvas{position:absolute;inset:0;z-index:9;pointer-events:auto;}
+.ae-canvas{position:absolute;inset:0;z-index:50;pointer-events:auto;touch-action:none;}
 .ae-canvas canvas{display:block;width:100%!important;height:100%!important;}
 .ae-hero,.ae-grid,.ae-detail,.ae-checkout{
   position:absolute;inset:0;z-index:12;will-change:transform,opacity;

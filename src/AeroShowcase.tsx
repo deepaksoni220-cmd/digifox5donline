@@ -789,7 +789,7 @@ const css = `
   background:radial-gradient(closest-side, rgba(20,5,10,.85) 10%, rgba(60,20,30,.4) 45%, transparent 80%);
   transform:translate(-50%,-50%) scaleY(.32);pointer-events:none;
   will-change:left,top,width,opacity,transform;filter:blur(3px);}
-.ae-canvas{position:absolute;inset:0;z-index:50;pointer-events:auto;touch-action:none;}
+.ae-canvas{position:absolute;inset:0;z-index:9;pointer-events:auto;touch-action:none;}
 .ae-canvas canvas{display:block;width:100%!important;height:100%!important;}
 .ae-hero,.ae-grid,.ae-detail,.ae-checkout{
   position:absolute;inset:0;z-index:12;will-change:transform,opacity;

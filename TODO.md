@@ -1,0 +1,8 @@
+- [x] Fix "Add to Bag" in src/AeroShowcase.tsx to add selected size variant to cart
+- [x] Remove search button from src/layout/AppLayout.tsx
+- [x] Trigger search from input field Enter key in src/layout/AppLayout.tsx
+- [x] Adjust related search styles in src/index.css
+- [x] Improve mobile hero layout so `.ae-hero-left` appears under tabs and above floating GLB
+- [ ] Verify compile/runtime after mobile layout changes
+- [x] Replace cart text with cart icon in header
+- [x] Move mobile .ae-hero-left closer to top tabs and keep above floating object

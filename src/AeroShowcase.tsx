@@ -156,10 +156,12 @@ function MainShoe({
   scene,
   progress,
   interacted,
+  checkoutDragRef,
 }: {
   scene: THREE.Group;
   progress: ProgRef;
   interacted: InterRef;
+  checkoutDragRef: MutableRefObject<{ dx: number; dy: number }>;
 }) {
   const ref = useRef<THREE.Group>(null);
   const inst = useInstance(scene);
@@ -247,6 +249,15 @@ function MainShoe({
       }
     }
 
+    const ext = checkoutDragRef.current;
+    if (ext.dx !== 0 || ext.dy !== 0) {
+      d.ry += ext.dx * 0.01;
+      d.rx = clamp(d.rx - ext.dy * 0.01, -1.0, 1.0);
+      ext.dx = 0;
+      ext.dy = 0;
+      interacted.current = true;
+    }
+
     if (!d.dragging) {
       gl.domElement.style.cursor = p >= DRAG_FROM ? "grab" : "";
     }
@@ -292,7 +303,15 @@ function GalleryShoe({
   );
 }
 
-function Scene({ progress, interacted }: { progress: ProgRef; interacted: InterRef }) {
+function Scene({
+  progress,
+  interacted,
+  checkoutDragRef,
+}: {
+  progress: ProgRef;
+  interacted: InterRef;
+  checkoutDragRef: MutableRefObject<{ dx: number; dy: number }>;
+}) {
   const { scene } = useGLTF(MODEL_URL);
 
   return (
@@ -302,7 +321,12 @@ function Scene({ progress, interacted }: { progress: ProgRef; interacted: InterR
       <directionalLight position={[-5, 6, 4]} intensity={1.5} />
       <directionalLight position={[4, 2, 6]} intensity={0.7} color="#ffffff" />
       <directionalLight position={[2, -3, 2]} intensity={0.25} color="#ffd9d2" />
-      <MainShoe scene={scene} progress={progress} interacted={interacted} />
+      <MainShoe
+        scene={scene}
+        progress={progress}
+        interacted={interacted}
+        checkoutDragRef={checkoutDragRef}
+      />
       {GALLERY.map((def, i) => (
         <GalleryShoe key={i} scene={scene} progress={progress} def={def} />
       ))}
@@ -354,6 +378,8 @@ export default function AeroShowcase() {
   const rotateHintRef = useRef<HTMLDivElement>(null);
   const sideImgLeftRef = useRef<HTMLImageElement>(null);
   const sideImgRightRef = useRef<HTMLImageElement>(null);
+  const checkoutDragZoneRef = useRef<HTMLDivElement>(null);
+  const checkoutDragDeltaRef = useRef({ dx: 0, dy: 0 });
 
   useEffect(() => {
     const card = new URLSearchParams(window.location.search).has("card");
@@ -539,7 +565,11 @@ export default function AeroShowcase() {
                 frameloop="always"
               >
                 <Suspense fallback={null}>
-                  <Scene progress={progress} interacted={interacted} />
+                  <Scene
+                    progress={progress}
+                    interacted={interacted}
+                    checkoutDragRef={checkoutDragDeltaRef}
+                  />
                 </Suspense>
               </Canvas>
             </div>
@@ -724,6 +754,48 @@ export default function AeroShowcase() {
               <p className="ae-co-note">Free returns within 30 days.</p>
             </div>
 
+            {/* checkout drag zone: allows rotate in sizing section without blocking buttons */}
+            <div
+              className="ae-checkout-dragzone"
+              ref={checkoutDragZoneRef}
+              onPointerDown={(e) => {
+                const el = checkoutDragZoneRef.current;
+                if (!el) return;
+                (el as any)._dragging = true;
+                (el as any)._lastX = e.clientX;
+                (el as any)._lastY = e.clientY;
+                try {
+                  el.setPointerCapture(e.pointerId);
+                } catch {}
+              }}
+              onPointerMove={(e) => {
+                const el = checkoutDragZoneRef.current;
+                if (!el || !(el as any)._dragging) return;
+                const lx = (el as any)._lastX ?? e.clientX;
+                const ly = (el as any)._lastY ?? e.clientY;
+                checkoutDragDeltaRef.current.dx += e.clientX - lx;
+                checkoutDragDeltaRef.current.dy += e.clientY - ly;
+                (el as any)._lastX = e.clientX;
+                (el as any)._lastY = e.clientY;
+              }}
+              onPointerUp={(e) => {
+                const el = checkoutDragZoneRef.current;
+                if (!el) return;
+                (el as any)._dragging = false;
+                try {
+                  el.releasePointerCapture(e.pointerId);
+                } catch {}
+              }}
+              onPointerCancel={(e) => {
+                const el = checkoutDragZoneRef.current;
+                if (!el) return;
+                (el as any)._dragging = false;
+                try {
+                  el.releasePointerCapture(e.pointerId);
+                } catch {}
+              }}
+            />
+
             {/* "drag to rotate" hint — sits over the shoe, never blocks the drag */}
             <div className="ae-rotate-hint" ref={rotateHintRef} aria-hidden>
               <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
@@ -873,6 +945,16 @@ const css = `
 .ae-co-customize{flex:none;width:38%;height:46px;border-radius:13px;font-family:inherit;font-size:13px;font-weight:600;color:#1d1a1c;background:#fff;border:1px solid rgba(29,26,28,.22);cursor:pointer;}
 .ae-co-bag{flex:1;height:46px;border-radius:13px;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:#1d1a1c;border:none;cursor:pointer;}
 .ae-co-note{position:absolute;right:clamp(22px,4vw,52px);bottom:clamp(22px,6vh,46px);font-size:11px;color:#9a9498;width:min(46%,440px);}
+.ae-checkout-dragzone{
+  position:absolute;
+  left:0;
+  top:0;
+  width:52%;
+  height:100%;
+  z-index:18;
+  pointer-events:auto;
+  touch-action:none;
+}
 .ae-rotate-hint{
   position:absolute;left:27%;top:78%;transform:translate(-50%,-50%);
   z-index:12;display:flex;align-items:center;gap:8px;white-space:nowrap;

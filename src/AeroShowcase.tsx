@@ -750,10 +750,12 @@ export default function AeroShowcase() {
 
             {/* checkout drag zone: allows rotate in sizing section without blocking buttons */}
             <div
-              className="ae-checkout-dragzone"
+              className="ae-checkout-rotate-layer"
               ref={checkoutDragZoneRef}
               onPointerDown={(e) => {
                 if (progress.current < 0.62) return;
+                const target = e.target as HTMLElement;
+                if (target.closest(".ae-co-head, .ae-co-sizes, .ae-co-actions, .ae-co-note")) return;
                 const el = checkoutDragZoneRef.current;
                 if (!el) return;
                 (el as any)._dragging = true;
@@ -795,11 +797,13 @@ export default function AeroShowcase() {
                   el.releasePointerCapture(e.pointerId);
                 } catch {}
               }}
-              style={{
-                pointerEvents: progress.current >= 0.62 ? "auto" : "none",
-                opacity: progress.current >= 0.62 ? 1 : 0,
-              }}
-            />
+              style={{ pointerEvents: progress.current >= 0.62 ? "auto" : "none" }}
+            >
+              <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--head" />
+              <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--sizes" />
+              <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--actions" />
+              <div className="ae-checkout-rotate-hole ae-checkout-rotate-hole--note" />
+            </div>
 
             {/* "drag to rotate" hint — sits over the shoe, never blocks the drag */}
             <div className="ae-rotate-hint" ref={rotateHintRef} aria-hidden>
@@ -950,16 +954,23 @@ const css = `
 .ae-co-customize{flex:none;width:38%;height:46px;border-radius:13px;font-family:inherit;font-size:13px;font-weight:600;color:#1d1a1c;background:#fff;border:1px solid rgba(29,26,28,.22);cursor:pointer;}
 .ae-co-bag{flex:1;height:46px;border-radius:13px;font-family:inherit;font-size:13px;font-weight:600;color:#fff;background:#1d1a1c;border:none;cursor:pointer;}
 .ae-co-note{position:absolute;right:clamp(22px,4vw,52px);bottom:clamp(22px,6vh,46px);font-size:11px;color:#9a9498;width:min(46%,440px);}
-.ae-checkout-dragzone{
+.ae-checkout-rotate-layer{
   position:absolute;
-  left:0;
-  top:62%;
-  width:52%;
-  height:38%;
+  inset:0;
   z-index:11;
   pointer-events:none;
   touch-action:none;
 }
+.ae-checkout-rotate-hole{
+  position:absolute;
+  right:clamp(22px,4vw,52px);
+  width:min(46%,440px);
+  pointer-events:none;
+}
+.ae-checkout-rotate-hole--head{top:clamp(26px,6vh,52px);height:46px;}
+.ae-checkout-rotate-hole--sizes{top:clamp(72px,16vh,118px);height:clamp(120px,18vh,154px);}
+.ae-checkout-rotate-hole--actions{bottom:clamp(44px,12vh,80px);height:52px;}
+.ae-checkout-rotate-hole--note{bottom:clamp(22px,6vh,46px);height:20px;}
 .ae-rotate-hint{
   position:absolute;left:27%;top:78%;transform:translate(-50%,-50%);
   z-index:12;display:flex;align-items:center;gap:8px;white-space:nowrap;

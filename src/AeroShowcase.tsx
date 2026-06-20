@@ -753,6 +753,7 @@ export default function AeroShowcase() {
               className="ae-checkout-dragzone"
               ref={checkoutDragZoneRef}
               onPointerDown={(e) => {
+                if (progress.current < 0.62) return;
                 const el = checkoutDragZoneRef.current;
                 if (!el) return;
                 (el as any)._dragging = true;
@@ -763,6 +764,7 @@ export default function AeroShowcase() {
                 } catch {}
               }}
               onPointerMove={(e) => {
+                if (progress.current < 0.62) return;
                 const el = checkoutDragZoneRef.current;
                 if (!el || !(el as any)._dragging) return;
                 const lx = (el as any)._lastX ?? e.clientX;
@@ -792,6 +794,10 @@ export default function AeroShowcase() {
                 try {
                   el.releasePointerCapture(e.pointerId);
                 } catch {}
+              }}
+              style={{
+                pointerEvents: progress.current >= 0.62 ? "auto" : "none",
+                opacity: progress.current >= 0.62 ? 1 : 0,
               }}
             />
 
@@ -947,11 +953,11 @@ const css = `
 .ae-checkout-dragzone{
   position:absolute;
   left:0;
-  top:0;
+  top:62%;
   width:52%;
-  height:100%;
-  z-index:18;
-  pointer-events:auto;
+  height:38%;
+  z-index:11;
+  pointer-events:none;
   touch-action:none;
 }
 .ae-rotate-hint{

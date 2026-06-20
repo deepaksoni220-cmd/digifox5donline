@@ -83,6 +83,7 @@ const galleryOp = (p: number) => {
 
 type ProgRef = MutableRefObject<number>;
 type InterRef = MutableRefObject<boolean>;
+type RotRef = MutableRefObject<{ rx: number; ry: number }>;
 
 // Build clone with clean materials for stable opacity.
 function useInstance(scene: THREE.Group, fadeable = false) {
@@ -156,12 +157,12 @@ function MainShoe({
   scene,
   progress,
   interacted,
-  checkoutDragRef,
+  rotationRef,
 }: {
   scene: THREE.Group;
   progress: ProgRef;
   interacted: InterRef;
-  checkoutDragRef: MutableRefObject<{ dx: number; dy: number }>;
+  rotationRef: RotRef;
 }) {
   const ref = useRef<THREE.Group>(null);
   const inst = useInstance(scene);
@@ -170,8 +171,6 @@ function MainShoe({
     dragging: false,
     lastX: 0,
     lastY: 0,
-    ry: 0,
-    rx: 0,
     demoStart: 0,
   });
 
@@ -197,8 +196,8 @@ function MainShoe({
       const dy = e.clientY - d.lastY;
       d.lastX = e.clientX;
       d.lastY = e.clientY;
-      d.ry += dx * 0.01;
-      d.rx = clamp(d.rx - dy * 0.01, -1.0, 1.0);
+      rotationRef.current.ry += dx * 0.01;
+      rotationRef.current.rx = clamp(rotationRef.current.rx - dy * 0.01, -1.0, 1.0);
       e.preventDefault();
     };
     const up = (e: PointerEvent) => {
@@ -221,7 +220,7 @@ function MainShoe({
       window.removeEventListener("pointerup", up as EventListener);
       window.removeEventListener("pointercancel", up as EventListener);
     };
-  }, [gl, progress, interacted]);
+  }, [gl, progress, interacted, rotationRef]);
 
   useFrame(({ viewport, clock }) => {
     const g = ref.current;
@@ -237,8 +236,8 @@ function MainShoe({
     let demoRy = 0;
 
     if (p < DRAG_FROM) {
-      d.ry += (0 - d.ry) * 0.1;
-      d.rx += (0 - d.rx) * 0.1;
+      rotationRef.current.ry += (0 - rotationRef.current.ry) * 0.1;
+      rotationRef.current.rx += (0 - rotationRef.current.rx) * 0.1;
       d.demoStart = 0;
     } else if (!interacted.current && !d.dragging) {
       if (d.demoStart === 0) d.demoStart = clock.elapsedTime + 0.45;
@@ -249,20 +248,15 @@ function MainShoe({
       }
     }
 
-    const ext = checkoutDragRef.current;
-    if (ext.dx !== 0 || ext.dy !== 0) {
-      d.ry += ext.dx * 0.01;
-      d.rx = clamp(d.rx - ext.dy * 0.01, -1.0, 1.0);
-      ext.dx = 0;
-      ext.dy = 0;
-      interacted.current = true;
-    }
-
     if (!d.dragging) {
       gl.domElement.style.cursor = p >= DRAG_FROM ? "grab" : "";
     }
 
-    g.rotation.set(kf.rx + d.rx, kf.ry + d.ry + demoRy, kf.rz);
+    g.rotation.set(
+      kf.rx + rotationRef.current.rx,
+      kf.ry + rotationRef.current.ry + demoRy,
+      kf.rz
+    );
     setOpacity(inst.mats, 1);
   });
 
@@ -306,11 +300,11 @@ function GalleryShoe({
 function Scene({
   progress,
   interacted,
-  checkoutDragRef,
+  rotationRef,
 }: {
   progress: ProgRef;
   interacted: InterRef;
-  checkoutDragRef: MutableRefObject<{ dx: number; dy: number }>;
+  rotationRef: RotRef;
 }) {
   const { scene } = useGLTF(MODEL_URL);
 
@@ -325,7 +319,7 @@ function Scene({
         scene={scene}
         progress={progress}
         interacted={interacted}
-        checkoutDragRef={checkoutDragRef}
+        rotationRef={rotationRef}
       />
       {GALLERY.map((def, i) => (
         <GalleryShoe key={i} scene={scene} progress={progress} def={def} />
@@ -379,7 +373,7 @@ export default function AeroShowcase() {
   const sideImgLeftRef = useRef<HTMLImageElement>(null);
   const sideImgRightRef = useRef<HTMLImageElement>(null);
   const checkoutDragZoneRef = useRef<HTMLDivElement>(null);
-  const checkoutDragDeltaRef = useRef({ dx: 0, dy: 0 });
+  const rotationRef = useRef({ rx: 0, ry: 0 });
 
   useEffect(() => {
     const card = new URLSearchParams(window.location.search).has("card");
@@ -568,7 +562,7 @@ export default function AeroShowcase() {
                   <Scene
                     progress={progress}
                     interacted={interacted}
-                    checkoutDragRef={checkoutDragDeltaRef}
+                    rotationRef={rotationRef}
                   />
                 </Suspense>
               </Canvas>
@@ -773,8 +767,13 @@ export default function AeroShowcase() {
                 if (!el || !(el as any)._dragging) return;
                 const lx = (el as any)._lastX ?? e.clientX;
                 const ly = (el as any)._lastY ?? e.clientY;
-                checkoutDragDeltaRef.current.dx += e.clientX - lx;
-                checkoutDragDeltaRef.current.dy += e.clientY - ly;
+                rotationRef.current.ry += (e.clientX - lx) * 0.01;
+                rotationRef.current.rx = clamp(
+                  rotationRef.current.rx - (e.clientY - ly) * 0.01,
+                  -1.0,
+                  1.0
+                );
+                interacted.current = true;
                 (el as any)._lastX = e.clientX;
                 (el as any)._lastY = e.clientY;
               }}

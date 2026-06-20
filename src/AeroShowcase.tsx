@@ -782,6 +782,7 @@ const css = `
 .ae-canvas canvas{display:block;width:100%!important;height:100%!important;}
 .ae-hero,.ae-grid,.ae-detail,.ae-checkout{
   position:absolute;inset:0;z-index:12;will-change:transform,opacity;
+  pointer-events:none;
 }
 .ae-grid,.ae-detail,.ae-checkout{opacity:0;}
 .ae-card-top{position:absolute;top:0;left:0;right:0;z-index:20;
@@ -827,6 +828,8 @@ const css = `
   box-shadow:0 12px 26px -10px rgba(42,31,35,.7);transition:transform .15s ease;}
 .ae-grid,.ae-detail{pointer-events:none;}
 .ae-checkout{pointer-events:none;z-index:30;}
+.ae-hero button,.ae-hero .ae-tab,.ae-hero .ae-dot,.ae-hero .ae-preorder{pointer-events:auto;}
+.ae-grid button,.ae-detail .ae-d-tab,.ae-detail .ae-d-thumb{pointer-events:auto;}
 .ae-checkout button,.ae-co-size,.ae-co-guide,.ae-d-tab,.ae-d-thumb{pointer-events:auto;}
 .ae-col{position:absolute;top:58%;transform:translateX(-50%);
   display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;z-index:2;}
